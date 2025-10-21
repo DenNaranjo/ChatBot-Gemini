@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot con Gemini AI</title>
+    <style>
+        /* ========================================
+           ESTILOS GENERALES Y RESET
+           ======================================== */
+        
+        /* Elimina márgenes y padding por defecto de todos los elementos */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box; /* Incluye padding y border en el ancho/alto total */
+        }
+
+        /* Estilos del body - contenedor principal de toda la página */
+        body {
+            /* Fuente del sistema para mejor rendimiento y apariencia nativa */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            /* Degradado de fondo morado - de arriba-izquierda a abajo-derecha */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh; /* Altura completa de la ventana */
+            display: flex; /* Usar flexbox para centrar */
+            justify-content: center; /* Centrar horizontalmente */
+            align-items: center; /* Centrar verticalmente */
+            padding: 20px; /* Espacio alrededor para dispositivos móviles */
+        }
+
+        /* ========================================
+           CONTENEDOR PRINCIPAL DEL CHAT
+           ======================================== */
+        
+        .container {
+            width: 100%;
+            max-width: 900px; 
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9; 
+        }
+
+        /* ========================================
+           ESTILO PARA SECCIÓN DE API KEY
+           ======================================== */
+        /* Fondo para ingresar la API Key */
+        .api-key-section {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        /* Campo de texto para ingresar la API Key */
+        .api-key-section input {
+            width: 70%;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        /* Botón para guardar la API Key */
+        .api-key-section button {
+            padding: 10px 20px;
+            background: #667eea; 
+            color: white;
+            border: none; 
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        /* Efecto hover (al pasar el mouse) sobre el botón */
+        .api-key-section button:hover {
+            background: #5568d3; /* Color más oscuro */
+            transform: translateY(-1px); /* Elevar 1px hacia arriba */
+        }
+
+        /* ========================================
+           ESTILO PARA CONTENEDOR DE MENSAJES DEL CHAT
+           ======================================== */
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            background: #f8f9fa;
+        }
+
+        /* ========================================
+           ESTILOS DE MENSAJES INDIVIDUALES
+           ======================================== */
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex; 
+            align-items: flex-start; 
+            animation: fadeIn 0.3s ease-in; /* Animacion */
+        }
+
+        /* Animación para que los mensajes aparezcan suavemente */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0); 
+            }
+        }
+
+        /* Alinear mensajes del usuario a la derecha */
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        /* Contenido del mensaje (la burbuja) */
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 15px;
+        }
+
+        /* Estilo específico para mensajes del USUARIO */
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Estilo específico para mensajes del BOT */
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0; /* Borde gris claro */
+            border-bottom-left-radius: 4px; /* Esquina inferior izquierda menos redondeada */
+        }
+
+        /* ========================================
+           CONTENEDOR DE INPUT Y BOTÓN DE ENVÍO
+           ======================================== */
+        
+        .input-container {
+            padding: 20px 25px;
+            background: white;
+            border-top: 1px solid #e0e0e0; /* Línea separadora superior */
+            display: flex; /* Usar flexbox para organizar horizontalmente */
+            gap: 12px; /* Espacio entre input y botón */
+        }
+
+        /* Campo de texto para escribir mensajes */
+        #userInput {
+            flex: 1; /* Ocupar todo el espacio disponible */
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px; /* Bordes muy redondeados (estilo moderno) */
+            font-size: 15px;
+            outline: none; /* Quitar borde azul por defecto al hacer focus */
+            transition: all 0.3s; /* Animación suave */
+        }
+
+        /* Cambiar color del borde cuando el input tiene focus (está seleccionado) */
+        #userInput:focus {
+            border-color: #667eea; /* Cambiar a color morado */
+        }
+
+        /* Botón de enviar mensaje */
+        #sendBtn {
+            padding: 15px 35px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        /* Efecto hover del botón (solo si NO está deshabilitado) */
+        #sendBtn:hover:not(:disabled) {
+            transform: translateY(-2px); /* Elevar 2px */
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); /* Sombra morada */
+        }
+
+        /* Estilo cuando el botón está deshabilitado */
+        #sendBtn:disabled {
+            opacity: 0.6; /* Hacerlo semi-transparente */
+            cursor: not-allowed; /* Mostrar cursor de "no permitido" */
+        }
+
+        /* ========================================
+           ANIMACIÓN DE CARGA (LOADING)
+           ======================================== */
+        
+        .loading {
+            display: inline-block;
+        }
+
+        /* Animación de puntos suspensivos mientras carga */
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite; /* Repetir infinitamente cada 1.5s */
+        }
+
+        /* Keyframes para la animación de puntos */
+        @keyframes dots {
+            0%, 20% { content: '.'; }    /* Un punto */
+            40% { content: '..'; }        /* Dos puntos */
+            60%, 100% { content: '...'; } /* Tres puntos */
+        }
+
+        /* ========================================
+           MENSAJES DE ERROR E INFORMACIÓN
+           ======================================== */
+        
+        /* Mensaje de error (fondo rojo claro) */
+        .error-message {
+            background: #fee; /* Fondo rojo muy claro */
+            color: #c33; /* Texto rojo oscuro */
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 10px 25px;
+            border-left: 4px solid #c33; /* Barra roja a la izquierda */
+        }
+
+        /* Mensaje informativo (texto centrado gris) */
+        .info-message {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ESTRUCTURA HTML DEL CHATBOT -->
+    
+    <!-- Contenedor principal de toda la aplicación -->
+    <div class="container">
+        
+        <!-- ENCABEZADO -->
+        <div class="header">
+            <h1>🤖 Chatbot con Gemini AI</h1>
+            <p>Tu asistente inteligente impulsado por Google Gemini</p>
+        </div>
+
+        <!-- SECCIÓN PARA INGRESAR LA API KEY -->
+        <div class="api-key-section">
+            <!-- Input tipo password para ocultar la API Key mientras se escribe -->
+            <input type="password" id="apiKeyInput" placeholder="Ingresa tu API Key de Google Gemini">
+            <!-- Botón que llama a la función saveApiKey() al hacer clic -->
+            <button onclick="saveApiKey()">Guardar API Key</button>
+        </div>
+
+        <!-- CONTENEDOR DONDE SE MUESTRAN LOS MENSAJES -->
+        <div class="chat-container" id="chatContainer">
+            <!-- Mensaje inicial con instrucciones -->
+            <div class="info-message">
+                👋 ¡Hola! Para comenzar, ingresa tu API Key de Google Gemini arriba.<br>
+                Puedes obtener una gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR DEL INPUT Y BOTÓN DE ENVÍO -->
+        <div class="input-container">
+            <!-- Input deshabilitado inicialmente hasta que se ingrese la API Key -->
+            <input type="text" id="userInput" placeholder="Escribe tu mensaje aquí..." disabled>
+            <!-- Botón también deshabilitado inicialmente -->
+            <button id="sendBtn" onclick="sendMessage()" disabled>Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        /* ========================================
+           VARIABLES GLOBALES
+           ======================================== */
+        
+        // Variable para almacenar la API Key de Gemini
+        let apiKey = '';
+        
+        // Array para guardar el historial de conversación (no se usa aún pero está lista para expansión futura)
+        let conversationHistory = [];
+
+        /* ========================================
+           FUNCIÓN PARA GUARDAR LA API KEY
+           ======================================== */
+        
+        function saveApiKey() {
+            // Obtener el elemento input donde el usuario escribió la API Key
+            const input = document.getElementById('apiKeyInput');
+            
+            // Guardar el valor del input en la variable global, eliminando espacios con trim()
+            apiKey = input.value.trim();
+            
+            // Verificar si se ingresó algo
+            if (apiKey) {
+                // Si hay API Key, habilitar el input de mensajes
+                document.getElementById('userInput').disabled = false;
+                
+                // Habilitar el botón de enviar
+                document.getElementById('sendBtn').disabled = false;
+                
+                // Cambiar el mensaje inicial por uno de confirmación
+                document.getElementById('chatContainer').innerHTML = '<div class="info-message">✅ API Key guardada. ¡Comienza a chatear!</div>';
+                
+                // Mostrar alerta de confirmación
+                alert('API Key guardada correctamente. ¡Ahora puedes chatear!');
+            } else {
+                // Si el input está vacío, mostrar alerta de error
+                alert('Por favor, ingresa una API Key válida');
+            }
+        }
+
+        /* ========================================
+           FUNCIÓN PRINCIPAL PARA ENVIAR MENSAJES
+           ======================================== */
+        
+        async function sendMessage() {
+            // Obtener el elemento del input de mensajes
+            const input = document.getElementById('userInput');
+            
+            // Obtener el texto del mensaje y eliminar espacios al inicio/final con trim()
+            const message = input.value.trim();
+            
+            // Si el mensaje está vacío, no hacer nada (salir de la función)
+            if (!message) return;
+            
+            // Verificar que exista una API Key guardada
+            if (!apiKey) {
+                alert('Por favor, ingresa tu API Key primero');
+                return;
+            }
+
+            // Limpiar el input (dejar vacío para el siguiente mensaje)
+            input.value = '';
+            
+            // Agregar el mensaje del usuario a la interfaz
+            addMessage(message, 'user');
+            
+            // Obtener el botón de enviar para modificarlo mientras se procesa
+            const sendBtn = document.getElementById('sendBtn');
+            
+            // Deshabilitar el botón para evitar múltiples envíos simultáneos
+            sendBtn.disabled = true;
+            
+            // Cambiar el texto del botón por una animación de carga
+            sendBtn.innerHTML = '<span class="loading">Pensando</span>';
+
+            // Bloque try-catch para manejar errores
+            try {
+                // ===== LLAMADA A LA API DE GEMINI =====
+                
+                // fetch() hace una petición HTTP a la API de Google Gemini
+                // await espera a que la petición termine antes de continuar
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+                    method: 'POST', // Método HTTP POST para enviar datos
+                    headers: {
+                        'Content-Type': 'application/json', // Indicar que enviamos JSON
+                    },
+                    // body: contenido de la petición en formato JSON
+                    body: JSON.stringify({
+                        contents: [{ // Array de contenidos
+                            parts: [{ // Partes del mensaje
+                                text: message // El texto del mensaje del usuario
+                            }]
+                        }]
+                    })
+                });
+
+                // Convertir la respuesta a formato JSON
+                // await espera a que se complete la conversión
+                const data = await response.json();
+                
+                // Verificar si hubo algún error en la respuesta
+                if (data.error) {
+                    // Si hay error, lanzar una excepción con el mensaje de error
+                    throw new Error(data.error.message);
+                }
+
+                // Extraer la respuesta del bot de la estructura JSON
+                // data.candidates[0] = primera (y única) respuesta
+                // .content.parts[0].text = el texto de la respuesta
+                const botResponse = data.candidates[0].content.parts[0].text;
+                
+                // Agregar la respuesta del bot a la interfaz
+                addMessage(botResponse, 'bot');
+
+            } catch (error) {
+                // Si ocurre algún error, se ejecuta este bloque
+                
+                // Mostrar el error en la consola del navegador (para debugging)
+                console.error('Error:', error);
+                
+                // Crear un elemento div para mostrar el error en la interfaz
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'error-message'; // Aplicar clase CSS de error
+                errorMsg.textContent = '❌ Error: ' + error.message; // Mostrar mensaje de error
+                
+                // Agregar el mensaje de error al contenedor de chat
+                document.getElementById('chatContainer').appendChild(errorMsg);
+                
+            } finally {
+                // Este bloque SIEMPRE se ejecuta, haya error o no
+                
+                // Volver a habilitar el botón de enviar
+                sendBtn.disabled = false;
+                
+                // Restaurar el texto original del botón
+                sendBtn.textContent = 'Enviar';
+            }
+        }
+
+        /* ========================================
+           FUNCIÓN PARA AGREGAR MENSAJES A LA INTERFAZ
+           ======================================== */
+        
+        function addMessage(text, sender) {
+            // Obtener el contenedor donde se muestran los mensajes
+            const chatContainer = document.getElementById('chatContainer');
+            
+            // Buscar si existe el mensaje informativo inicial
+            const infoMsg = chatContainer.querySelector('.info-message');
+            
+            // Si existe, eliminarlo (ya que ahora hay mensajes reales)
+            if (infoMsg) infoMsg.remove();
+
+            // Crear un div para el mensaje completo
+            const messageDiv = document.createElement('div');
+            
+            // Agregar clases CSS: 'message' y 'user' o 'bot' según quién envía
+            messageDiv.className = `message ${sender}`;
+            
+            // Crear un div para el contenido (la burbuja del mensaje)
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Establecer el texto del mensaje
+            contentDiv.textContent = text;
+            
+            // Agregar el contenido dentro del mensaje
+            messageDiv.appendChild(contentDiv);
+            
+            // Agregar el mensaje completo al contenedor de chat
+            chatContainer.appendChild(messageDiv);
+            
+            // Hacer scroll automático hacia el final para ver el último mensaje
+            // scrollHeight = altura total del contenido (incluyendo lo que no se ve)
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        /* ========================================
+           EVENT LISTENER PARA LA TECLA ENTER
+           ======================================== */
+        
+        // Agregar un "escuchador" de eventos al input de mensajes
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            // Verificar si la tecla presionada es Enter Y no se está presionando Shift
+            // (Shift+Enter podría usarse para saltos de línea en el futuro)
+            if (e.key === 'Enter' && !e.shiftKey) {
+                // Prevenir el comportamiento por defecto (que no agregue un salto de línea)
+                e.preventDefault();
+                
+                // Llamar a la función de enviar mensaje
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
